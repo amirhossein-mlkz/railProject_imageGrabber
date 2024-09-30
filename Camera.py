@@ -4,8 +4,8 @@ import time
 
 from onvif import ONVIFCamera #pip install onvif-zeep
 from persiantools.jdatetime import JalaliDateTime
-import cv2
 import numpy as np
+import cv2
 
 
 THREAD = False
@@ -82,7 +82,7 @@ class Camera(threading.Thread):
 
         return stream_uri.Uri
     
-    def write_info(self, img, date:JalaliDateTime, train_id:str, cam_name:str, font = cv2.FONT_ITALIC, font_scale=1.5, thickness=2, padding=10, bg_color=(20,20,20), gap=20):
+    def write_info(self, img, date:JalaliDateTime, train_id:str, cam_name:str, font =  cv2.FONT_ITALIC, font_scale=1.5, thickness=2, padding=10, bg_color=(20,20,20), gap=20):
         
         date_str = date.strftime('%Y/%m/%d %H:%M:%S')
         origin = (20,75)

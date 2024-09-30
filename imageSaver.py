@@ -3,8 +3,8 @@ import os
 from persiantools.jdatetime import JalaliDateTime
 import threading
 
-import cv2
 import numpy as np
+import cv2
 import imageio #pip install imageio[ffmpeg]
 from onvif import ONVIFCamera #pip install onvif-zeep    
 from Camera import Frame
