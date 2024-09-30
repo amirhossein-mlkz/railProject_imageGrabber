@@ -25,6 +25,7 @@ class ffmpegCamera(threading.Thread):
                  codec= NONE_CODEC,
                  segments = 600,
                  org_fps = 25,
+                 temp_folder = 'temp_videos',
                  
                  ) -> None:
         super().__init__()
@@ -37,12 +38,9 @@ class ffmpegCamera(threading.Thread):
         self.fps = fps
         self.org_fps = org_fps
         self.segments = segments
-        self.temp_folder = 'videos'
-
-    def check_and_build_temp_folder(self,):
-       if not os.path.exists(self.temp_folder):
-          print('temp path created')
-          os.mkdir(self.temp_folder)
+        self.temp_folder = temp_folder
+        self.loop_index = 0
+       
 
     def get_stream_url(self,):
         try:
@@ -117,30 +115,17 @@ class ffmpegCamera(threading.Thread):
         return stream
     
 
-    def run(self,):
-      while True:
-        print('Try Connect')
-        rstp_url = self.get_stream_url()  
-        if rstp_url is None:
-           time.sleep(5)
-           continue
-           
-        try:
-            self.check_and_build_temp_folder()
-        except Exception as e:
-           print(e)
-           continue
-        
-        print('Connect Success')
-        try:
-           self.build_and_run(rstp_url)
-        except Exception as e:
-           print(e)
-        print('Stream Stop')
-           
-        
+    def build_path(self, ):
+        output_dir = os.path.join(self.temp_folder,self.name)
+        if not os.path.exists(output_dir):
+          print('temp path created')
+          os.makedirs(output_dir)
 
-    def build_and_run(self,rstp_url):
+        fname = f'video_{self.loop_index}_{self.name}' + '_%04d.mp4'
+        self.loop_index+=1
+        return output_dir, fname
+    
+    def build_and_run_stream(self,rstp_url, output_path):
         
         stream = ffmpeg.input(rstp_url, 
                               ss=0,
@@ -150,8 +135,6 @@ class ffmpegCamera(threading.Thread):
         # stream = self.add_write_info_filter(stream)
         # stream = ffmpeg.filter(stream, 'fps', fps=self.fps, round='up')
 
-
-        output_path = os.path.join(self.temp_folder,'output_segmented_%03d.mp4')
         stream = ffmpeg.output(stream, 
                        output_path, 
                        vcodec=self.codec,
@@ -171,6 +154,38 @@ class ffmpegCamera(threading.Thread):
             print("Error occurred:", e.stderr.decode())
         except KeyboardInterrupt:
             print("Recording stopped manually.")
+    
+
+    def run(self,):
+      while True:
+        print('Try Connect')
+        rstp_url = self.get_stream_url()  
+        if rstp_url is None:
+           time.sleep(5)
+           continue
+        
+        try:
+            output_dir, output_fname = self.build_path()
+            output_path = os.path.join(output_dir, output_fname)
+            
+        except Exception as e:
+           print(e)
+           continue
+
+        
+        print('Connect Success')
+        try:
+           self.build_and_run_stream(rstp_url, output_path)
+        except Exception as e:
+           print(e)
+        print('Stream Stop')
+
+    
+    
+           
+        
+
+    
 
         # command  = ffmpeg.compile(stream)
 

@@ -8,6 +8,7 @@ from imageSaver import imageSave
 from configReader import configReader 
 from fileManager import fileManager, PERMITION
 from storgeManager import storageManager
+from filesSorting import moviesSorting
 
 class App:
     LIVE_FPS = 25
@@ -15,6 +16,10 @@ class App:
         self.config = configReader()
         self.isaver = imageSave(self.config.path, self.config.train_id)
         self.grabbers:dict[str, ffmpegCamera] = {}
+        self.movieSorting = moviesSorting(train_id=self.config.train_id,
+                                          cycle_time_sec=30,
+                                          src_path=self.config.temp_folder,
+                                          dst_path=self.config.path)
 
         try:
             _, name = os.path.split(self.config.path)
@@ -35,6 +40,7 @@ class App:
                                 ip=camera_info['ip'],
                                 train_id= self.config.train_id,
                                 fps=25,
+                                temp_folder=self.config.temp_folder
                                 )
             
             self.grabbers[camera_info['name']] = grab
@@ -42,7 +48,10 @@ class App:
 
     def start(self,):
         for name, grabber in self.grabbers.items():
-            grabber.run()
+            grabber.start()
+        time.sleep(1)
+        self.movieSorting.start()
+
 
 
 if __name__:
