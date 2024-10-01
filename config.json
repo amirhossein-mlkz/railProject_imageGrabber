@@ -14,16 +14,14 @@
 
     "path" : "c:/image_share",
     "temp_folder": "temp_videos",
-    "max_allowed_storage": 0.25,
+    "max_allowed_storage": 0.7,
     "train_id": "11BG21",
-    "max_file_count": 100,
     "motion": "false",
     "motion_sens": 3000,
 
     "output": "video",
-    "video_fps": 20,
-    "video_frames": 14400,
-    "video_time": 600
+    "video_fps": 25,
+    "video_duration": 600
     
 
 

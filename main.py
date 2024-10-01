@@ -20,6 +20,9 @@ class App:
                                           cycle_time_sec=30,
                                           src_path=self.config.temp_folder,
                                           dst_path=self.config.path)
+        
+
+
 
         try:
             _, name = os.path.split(self.config.path)
@@ -30,7 +33,9 @@ class App:
         except Exception as e:
             print(e)
 
-        self.storageManager = storageManager(self.config.path, max_usage=self.config.max_allowed_storage)
+        self.storageManager = storageManager(self.config.path, 
+                                             max_usage=self.config.max_allowed_storage,
+                                             cleaning_evry_sec=2000)
 
     def load_grabbers(self,):
         for camera_info in self.config.cameras:
@@ -40,13 +45,15 @@ class App:
                                 ip=camera_info['ip'],
                                 train_id= self.config.train_id,
                                 fps=25,
-                                temp_folder=self.config.temp_folder
+                                temp_folder=self.config.temp_folder,
+                                segments=self.config.video_duration,
                                 )
             
             self.grabbers[camera_info['name']] = grab
-
+ 
 
     def start(self,):
+        self.storageManager.start()
         for name, grabber in self.grabbers.items():
             grabber.start()
         time.sleep(1)

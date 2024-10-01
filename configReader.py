@@ -12,13 +12,11 @@ class configReader:
         self.max_allowed_storage = float(self.config['max_allowed_storage'])
         self.cameras:list[dict] = self.config['cameras']
         self.train_id = self.config['train_id']
-        self.max_file_count = int(self.config['max_file_count'])
         self.output_type = self.config['output']
-        self.video_frames_count = int(self.config['video_frames'])
+        self.video_duration = int(self.config['video_duration'])
         self.video_fps = int(self.config['video_fps'])
         self.motion = self.config['motion'].lower() == 'true'
         self.motion_sens = int(self.config['motion_sens'])
-        self.video_time = int(self.config['video_time'])
         self.temp_folder = self.config['temp_folder']
 
         

@@ -22,8 +22,8 @@ class ffmpegCamera(threading.Thread):
                  train_id:str,
                  ip:str, 
                  fps:int,
-                 codec= NONE_CODEC,
-                 segments = 600,
+                 codec= MPEG,
+                 segments = 300,
                  org_fps = 25,
                  temp_folder = 'temp_videos',
                  
@@ -40,7 +40,9 @@ class ffmpegCamera(threading.Thread):
         self.segments = segments
         self.temp_folder = temp_folder
         self.loop_index = 0
-       
+
+        self.daemon = True
+
 
     def get_stream_url(self,):
         try:

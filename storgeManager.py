@@ -59,6 +59,8 @@ class storageManager(threading.Thread):
         self.last_cleaning_time = JalaliDateTime.now()
         self.last_cleaning_time = self.last_cleaning_time.replace(year= 1376)
 
+        self.daemon = True
+
 
     def get_disk_usage(self, path):
         total, used, free = shutil.disk_usage(path)

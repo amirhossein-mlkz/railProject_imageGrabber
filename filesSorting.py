@@ -19,6 +19,9 @@ class moviesSorting(threading.Thread):
         self.current_files = {}
         self.previous_files = {}
 
+        self.daemon = True
+
+
 
     def get_files_list(self,):
         
