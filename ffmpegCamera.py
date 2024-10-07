@@ -7,7 +7,7 @@ import os
 import ffmpeg
 from onvif import ONVIFCamera
 from persiantools import jdatetime
-
+import dorsa_logger
 
 H256 = 'libx265'
 H264 = 'libx264'
@@ -22,10 +22,12 @@ class ffmpegCamera(threading.Thread):
                  train_id:str,
                  ip:str, 
                  fps:int,
-                 codec= MPEG,
+                 codec= NONE_CODEC,
                  segments = 300,
                  org_fps = 25,
                  temp_folder = 'temp_videos',
+
+                 logger = dorsa_logger.logger
                  
                  ) -> None:
         super().__init__()
@@ -40,6 +42,8 @@ class ffmpegCamera(threading.Thread):
         self.segments = segments
         self.temp_folder = temp_folder
         self.loop_index = 0
+
+        self.logger = logger
 
         self.daemon = True
 
@@ -61,11 +65,23 @@ class ffmpegCamera(threading.Thread):
               'StreamSetup': stream_setup,
               'ProfileToken': profiles[0].token
           })
+          #-----------------------------------------------------------
+          log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                            text=f"stream uri camera {self.name}: {stream_uri.Uri}", 
+                                            code="FCGSU000")
+          self.logger.create_new_log(message=log_msg)
+          #-----------------------------------------------------------
+            
           return stream_uri.Uri
         
         except Exception as e:
-           print(e)
-           return None 
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                text=f"error happend in get stream uri camera {self.name}:", 
+                                                code="FCGSU001")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
+            return None 
     
     def add_write_info_filter(self, stream):
         
@@ -120,7 +136,12 @@ class ffmpegCamera(threading.Thread):
     def build_path(self, ):
         output_dir = os.path.join(self.temp_folder,self.name)
         if not os.path.exists(output_dir):
-          print('temp path created')
+          #-----------------------------------------------------------
+          log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                            text=f"ffmpegCamera build temp folder for camera {self.name}: {output_dir}", 
+                                            code="FCBP000")
+          self.logger.create_new_log(message=log_msg)
+          #-----------------------------------------------------------
           os.makedirs(output_dir)
 
         fname = f'video_{self.loop_index}_{self.name}' + '_%04d.mp4'
@@ -151,16 +172,43 @@ class ffmpegCamera(threading.Thread):
         stream = ffmpeg.overwrite_output(stream)
 
         try:
-            out, err = ffmpeg.run(stream, quiet=False)         
+            out, err = ffmpeg.run(stream, quiet=False) 
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
+                                           text=f"ffmpeg run output {self.name}: {out} - {err}", 
+                                           code="FCR001")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------        
         except ffmpeg.Error as e:
-            print("Error occurred:", e.stderr.decode())
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                               text=f"error occured in build_and_run_stream: {e.stderr.decode()}", 
+                                               code="FCBARS000")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
         except KeyboardInterrupt:
-            print("Recording stopped manually.")
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                               text=f"recoed stop manualy {self.name}", 
+                                               code="FCBARS001")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
     
 
     def run(self,):
+      #-----------------------------------------------------------
+      log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                         text=f"run camera thread :{self.name}", 
+                                         code="FCR000")
+      self.logger.create_new_log(message=log_msg)
+      #-----------------------------------------------------------
       while True:
-        print('Try Connect')
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"try connect to camera {self.name}", 
+                                           code="FCR001")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
         rstp_url = self.get_stream_url()  
         if rstp_url is None:
            time.sleep(5)
@@ -171,16 +219,37 @@ class ffmpegCamera(threading.Thread):
             output_path = os.path.join(output_dir, output_fname)
             
         except Exception as e:
-           print(e)
+           #-----------------------------------------------------------
+           log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                              text=f"error happend in ffmpegCamera build path {self.name}: {e}", 
+                                              code="FCR002")
+           self.logger.create_new_log(message=log_msg)
+           #-----------------------------------------------------------
            continue
 
         
-        print('Connect Success')
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"connect to camera {self.name} success", 
+                                           code="FCR003")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
         try:
            self.build_and_run_stream(rstp_url, output_path)
         except Exception as e:
-           print(e)
-        print('Stream Stop')
+           #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                           text=f"error happend in run build_and_run_stream ffmpegCamera {self.name}: {e}", 
+                                           code="FCR004")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
+        
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"stream stop {self.name}", 
+                                           code="FCR005")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
 
     
     

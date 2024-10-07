@@ -2,8 +2,10 @@ import os
 import sys
 import time
 import threading
-from persiantools.jdatetime import JalaliDateTime , timedelta
 import shutil
+
+from persiantools.jdatetime import JalaliDateTime , timedelta
+import dorsa_logger
 
 class Space:
     def __init__(self, bytes) -> None:
@@ -49,14 +51,18 @@ class Space:
 
 class storageManager(threading.Thread):
 
-    def __init__(self, path, max_usage=0.8, cleaning_evry_sec=2000) -> None:
+    def __init__(self, path, logs_path, max_usage=0.8, max_log_count=100, cleaning_evry_sec=2000, logger:None|dorsa_logger.logger=None) -> None:
         super().__init__()
 
         self.path = path
+        self.logs_path = logs_path
+        self.max_log_count = max_log_count
         self.max_usage = max_usage
         self.cleaning_evry_sec = cleaning_evry_sec
+        self.logger = logger
 
         self.last_cleaning_time = JalaliDateTime.now()
+        #soon last_cleaning_time occur run storage manager as soon 
         self.last_cleaning_time = self.last_cleaning_time.replace(year= 1376)
 
         self.daemon = True
@@ -72,25 +78,75 @@ class storageManager(threading.Thread):
     
 
     def remove_empty_dirs(self, directory):
-        # لیست تمام محتویات دایرکتوری را می‌گیرد
         is_empty = True
         for item in os.listdir(directory):
             item_path = os.path.join(directory, item)
             
-            # اگر محتویات یک زیرشاخه باشد، به صورت بازگشتی آن را بررسی می‌کنیم
             if os.path.isdir(item_path):
                 if not self.remove_empty_dirs(item_path):
                     is_empty = False  # اگر زیرشاخه خالی نبود، این دایرکتوری را حذف نمی‌کنیم
             else:
-                is_empty = False  # اگر فایلی وجود داشت، دایرکتوری خالی نیست
+                is_empty = False
         
-        # اگر این دایرکتوری خالی بود، آن را حذف می‌کنیم
         if is_empty:
             os.rmdir(directory)
-            print(f"Removed empty directory: {directory}")
-            return True  # نشان می‌دهد که این دایرکتوری حذف شد
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"remove empty folder {directory}", 
+                                           code="SMRED000")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
+            return True
         else:
-            return False  # نشان می‌دهد که این دایرکتوری حذف نشد
+            return False
+        
+    def remove_logs(self,):
+        logs = []
+        for day_folder in os.listdir(self.logs_path):
+            day_log_path = os.path.join(self.logs_path, day_folder)
+            for fname in os.listdir(day_log_path):
+                slog_path = os.path.join(day_log_path, fname)
+                logs.append(slog_path)
+
+        logs.sort()
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"found {len(logs)} logs", 
+                                           code="SMRL000")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
+        
+        if len(logs)> self.max_log_count:
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"start remove logs", 
+                                           code="SMRL001")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
+
+            for log_path in logs[:-self.max_log_count]:                
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"try remove log {log_path}", 
+                                           code="SMRL002")
+                self.logger.create_new_log(message=log_msg)
+                #----------------------------------------------------------
+
+                try:
+                    os.remove(log_path)
+                except Exception as e:
+                    #-----------------------------------------------------------
+                    log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                        text=f"error occur during remove log {log_path}: {e}", 
+                                                        code="SMRL003")
+                    self.logger.create_new_log(message=log_msg)
+                    #----------------------------------------------------------
+
+
+
+
+
+            
     
 
     def __sort_file_number(self, files:list[str]):
@@ -103,7 +159,7 @@ class storageManager(threading.Thread):
         return files
 
 
-    def get_lasts_files(self,path, n=1) -> list[list[str]]:
+    def get_oldets_files(self,path, n=1) -> list[list[str]]:
         results = []
         for train in os.listdir(path):
             train_path = os.path.join(self.path, train)
@@ -165,6 +221,12 @@ class storageManager(threading.Thread):
 
 
     def run(self,):
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"StorageManager thread run", 
+                                           code="SMR000")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
         while True:
             try:
                 now = JalaliDateTime.now()
@@ -173,21 +235,46 @@ class storageManager(threading.Thread):
                 if delta.total_seconds() < self.cleaning_evry_sec:
                     time.sleep(1)
                     continue
-                #-------------------------------------------------------------------------------------------
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                text=f"start checking storage on {self.path }", 
+                                                code="SMR001")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
                 self.last_cleaning_time = now
-                print("checking storage")
                 total, used, free, max_allowed= self.get_disk_usage(self.path)
-                print(f"total: {total.toGB()} ---- used: {used.toGB()} ---- free:{free.toGB()}  ----- allowed: {max_allowed.toGB()}")
-                
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                   text=f"total: {total.toGB()} ---- used: {used.toGB()} ---- free:{free.toGB()}  ----- allowed: {max_allowed.toGB()}", 
+                                                   code="SMR002")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
                 while used > max_allowed:
-                    print('Cleaning')
+                    #-----------------------------------------------------------
+                    log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                text=f"storage need cleaning", 
+                                                code="SMR003")
+                    self.logger.create_new_log(message=log_msg)
+                    #-----------------------------------------------------------
                     
                     try:
-                        res = self.get_lasts_files(self.path, 1) #get first 50 hours folder of each camera
+                        res = self.get_oldets_files(self.path, 1) #get first 50 hours folder of each camera
+                        #-----------------------------------------------------------
+                        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                text=f"oldest files: {res}", 
+                                                code="SMR004")
+                        self.logger.create_new_log(message=log_msg)
+                        #-----------------------------------------------------------
                     except Exception as e:
-                        print(e)
+                        #-----------------------------------------------------------
+                        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                text=f"ERROR Happend in storage Manger get_oldest_files: {e}", 
+                                                code="SMR005")
+                        self.logger.create_new_log(message=log_msg)
+                        #-----------------------------------------------------------
                         break
-
+                    
+                    #is_any_file_to_remove flag show is there any files to remove or storage is full beacuse of other files in system
                     is_any_file_to_remove = False
                     for camera_last_hours in res:
                         if len(camera_last_hours):
@@ -195,35 +282,81 @@ class storageManager(threading.Thread):
 
                         for path in camera_last_hours:
                             try:
-                                print(f'try remove {path}')
+                                #-----------------------------------------------------------
+                                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                text=f"storageManager try remove {path}", 
+                                                code="SMR006")
+                                self.logger.create_new_log(message=log_msg)
+                                #-----------------------------------------------------------
                                 self.remove(path)
-                                print('remove success')
+                                
+                                #-----------------------------------------------------------
+                                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                text=f"success remove {path}", 
+                                                code="SMR007")
+                                self.logger.create_new_log(message=log_msg)
+                                #-----------------------------------------------------------
                             except Exception as e:
-                                print(f'Remove failed :{e}')      
+                                #-----------------------------------------------------------
+                                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                text=f"storageManager remove failed: {e}", 
+                                                code="SMR008")
+                                self.logger.create_new_log(message=log_msg)
+                                #-----------------------------------------------------------   
 
                     if not is_any_file_to_remove:
-                        print('WARNING: there is not any file to remove')
+                        #-----------------------------------------------------------
+                        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
+                                                           text=f"there is not any file to remove this means storge is full beacuse of other files", 
+                                                           code="SMR009")
+                        self.logger.create_new_log(message=log_msg)
+                        #-----------------------------------------------------------
                         break
                     total, used, free, max_allowed= self.get_disk_usage(self.path)
                     #end while remove
                 #-------------------------------------------------------------------------------------------
                 total, used, free, max_allowed= self.get_disk_usage(self.path)
-                print('Statistics after cleaning:')
-                print(f"- total: {total.toGB()} ---- used: {used.toGB()} ---- free:{free.toGB()}  ----- allowed: {max_allowed.toGB()}")
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                   text=f"Statistics after cleaning: total: {total.toGB()} ---- used: {used.toGB()} ---- free:{free.toGB()}  ----- allowed: {max_allowed.toGB()}", 
+                                                   code="SMR010")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
                 #-------------------------------------------------------------------------------------------
                 try:
-                    print('remove empty files')
                     self.remove_empty_dirs(self.path)
                 except Exception as e:
-                    print(f'remove empty failed {e}')
+                    #-----------------------------------------------------------
+                    log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                       text=f"error happend in cleaning empty folders: {e}", 
+                                                       code="SMR011")
+                    self.logger.create_new_log(message=log_msg)
+                    #-----------------------------------------------------------
+
+                try:
+                    self.remove_empty_dirs(self.logs_path)
+                except Exception as e:
+                    #-----------------------------------------------------------
+                    log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                       text=f"error happend in cleaning empty folders logs: {e}", 
+                                                       code="SMR011")
+                    self.logger.create_new_log(message=log_msg)
+                    #-----------------------------------------------------------
+
+                #-------------------------------------------------------------------------------------------
+
+                self.remove_logs()
+
+                #-------------------------------------------------------------------------------------------
+
 
             except Exception as e:
-                print(e)
-
-
-
-
-
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                   text=f"error happend in StorageManager: {e}", 
+                                                   code="SMR012")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
             self.last_cleaning_time
     
 

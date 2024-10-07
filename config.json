@@ -12,7 +12,7 @@
     ],
 
 
-    "path" : "c:/image_share",
+    "path" : "c:/rail_share",
     "temp_folder": "temp_videos",
     "max_allowed_storage": 0.7,
     "train_id": "11BG21",
