@@ -14,6 +14,8 @@ class configUpdateChecker(threading.Thread):
         self.init_mtime = mtime
         self.logger = logger
 
+    
+
 
     def check_file_modification(self,):
         if os.path.exists(self.path):

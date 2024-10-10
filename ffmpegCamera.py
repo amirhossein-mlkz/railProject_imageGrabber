@@ -43,6 +43,7 @@ class ffmpegCamera(threading.Thread):
         self.segments = segments
         self.temp_folder = temp_folder
         self.loop_index = 0
+
         codesc = {
            'none':NONE_CODEC,
            'mpeg':MPEG,
@@ -54,6 +55,7 @@ class ffmpegCamera(threading.Thread):
         self.logger = logger
 
         self.daemon = True
+        self.proccess = None
 
 
     def get_stream_url(self,):
@@ -157,7 +159,7 @@ class ffmpegCamera(threading.Thread):
         return output_dir, fname
     
     def build_and_run_stream(self,rstp_url, output_path):
-        
+        self.proccess = None
         stream = ffmpeg.input(rstp_url, 
                               ss=0,
                               rtsp_transport='tcp',
@@ -180,10 +182,10 @@ class ffmpegCamera(threading.Thread):
         stream = ffmpeg.overwrite_output(stream)
 
         try:
-            out, err = ffmpeg.run(stream, quiet=False) 
+            self.proccess = ffmpeg.run(stream, quiet=False, ) 
             #-----------------------------------------------------------
             log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
-                                           text=f"ffmpeg run output {self.name}: {out} - {err}", 
+                                           text=f"ffmpeg run output {self.name}: {self.proccess}", 
                                            code="FCR001")
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------        
@@ -201,7 +203,23 @@ class ffmpegCamera(threading.Thread):
                                                code="FCBARS001")
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
-    
+    def terminate_ffmpeg(self,):
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                               text=f"terminate ffmpeg {self.name}", 
+                                               code="FCTF000")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
+        if self.proccess is not None:
+            try:
+                self.proccess.terminate()
+            except Exception as e:
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                    text=f"terminate ffmpeg {self.name}:{e}", 
+                                                    code="FCTF001")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
 
     def run(self,):
       #-----------------------------------------------------------

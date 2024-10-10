@@ -1,9 +1,13 @@
 import os
 import time
 import shutil
+import signal
+import sys
 
 import numpy as np
 import dorsa_logger
+import psutil
+
 
 from ffmpegCamera import ffmpegCamera
 from imageSaver import imageSave
@@ -18,6 +22,7 @@ class App:
     
 
     def __init__(self) -> None:
+        self.terminate_ffmpeg_processes()
         self.mkdirs()
         
         self.logger = dorsa_logger.logger(
@@ -106,6 +111,16 @@ class App:
                                              max_log_count=100,
                                              cleaning_evry_sec=2000,
                                              logger= self.logger)
+        
+    def terminate_ffmpeg_processes(self,):
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                print( proc.info['name'])
+                if proc.info['name'] == 'ffmpeg.exe':
+                    print(f'Terminating FFmpeg process with PID: {proc.info["pid"]}')
+                    proc.terminate()
+            except Exception as e:
+                print(e)
 
     def mkdirs(self,):
         if not os.path.exists(pathsConstans.SHARE_FOLDER):
@@ -139,6 +154,13 @@ class App:
         if os.path.exists(configReader.PATH):
             self.config = configReader()
 
+    def signal_handler(self, sig, frame):
+        print('Shutting down...')
+        # Terminate all ffmpegCamera subprocesses
+        for grabber in self.grabbers.values():
+            grabber.terminate_ffmpeg()  # Ensure you have this method to terminate subprocesses.
+        sys.exit(0)
+
     def load_grabbers(self,):
         for camera_info in self.config.cameras:
             #-----------------------------------------------------------
@@ -169,6 +191,9 @@ class App:
                                            code="AS000")
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.signal_handler)
+
         self.storageManager.start()
         for name, grabber in self.grabbers.items():
             grabber.start()
