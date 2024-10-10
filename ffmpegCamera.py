@@ -85,7 +85,7 @@ class ffmpegCamera(threading.Thread):
         except Exception as e:
             #-----------------------------------------------------------
             log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
-                                                text=f"error happend in get stream uri camera {self.name}:", 
+                                                text=f"error happend in get stream uri camera {self.name}: {e}", 
                                                 code="FCGSU001")
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------

@@ -12,28 +12,16 @@ from fileManager import fileManager, PERMITION
 from storgeManager import storageManager
 from filesSorting import moviesSorting
 from configUpdateChecker import configUpdateChecker
+from pathsConstans import pathsConstans
 
 class App:
-    IMAGES_FOLDER = 'images'
-    UTILS_FOLDER = 'utils'
-    LOGS_FOLDER = 'logs'
+    
 
     def __init__(self) -> None:
-        self.config = configReader()
-        self.config_mtime = None
-        self.config_path = os.path.join(self.config.path, self.UTILS_FOLDER, 'config.json' )
-
-        self.update_config()
-        
-
-        self.images_path = os.path.join(self.config.path, self.IMAGES_FOLDER)
-        self.utils_path = os.path.join(self.config.path, self.UTILS_FOLDER)
-        self.logs_path = os.path.join(self.config.path, self.UTILS_FOLDER, self.LOGS_FOLDER)
-
         self.mkdirs()
         
         self.logger = dorsa_logger.logger(
-                                        main_folderpath=self.logs_path,
+                                        main_folderpath=pathsConstans.LOGS_SHARE_FOLDER,
                                         date_type=dorsa_logger.date_types.AD_DATE,
                                         date_format=dorsa_logger.date_formats.YYMMDD,
                                         time_format=dorsa_logger.time_formats.HHMMSS,
@@ -42,8 +30,34 @@ class App:
                                         console_print=True,
                                         current_username="admin",
                                         line_seperator='-')
+        self.config:configReader = None
+        self.config_mtime = None
+
+        while True:
+            self.update_config()
+
+            if self.config is not None:
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                            text=f"config update success", 
+                                            code="Ainit000")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
+                break
+            
+            else:
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                            text=f"no config exists", 
+                                            code="Ainit000")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
+                time.sleep(30)
+            
+                    
+
         
-        self.configUpdateChecker = configUpdateChecker(path=self.config_path,
+        self.configUpdateChecker = configUpdateChecker(path=pathsConstans.CONFIG_SHARE_PATH,
                                                        mtime=self.config_mtime,
                                                        logger=self.logger)
         self.configUpdateChecker.start()
@@ -51,65 +65,69 @@ class App:
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
                                             text=f"RUN APP With Config:{self.config.config}", 
-                                            code="Ainit000")
+                                            code="Ainit001")
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
         
         self.grabbers:dict[str, ffmpegCamera] = {}
         self.movieSorting = moviesSorting(train_id=self.config.train_id,
                                           cycle_time_sec=30,
-                                          src_path=self.config.temp_folder,
-                                          dst_path=self.config.path,
+                                          src_path=pathsConstans.TEMP_VIDEOS_FOLDER,
+                                          dst_path=pathsConstans.IMAGES_SHARE_FOLDER,
                                           logger= self.logger)
         
 
 
 
         try:
-            _, name = os.path.split(self.config.path)
+            
+            _, name = os.path.split(pathsConstans.SHARE_FOLDER)
             #-----------------------------------------------------------
             log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
-                                                text=f"share folder {self.config.path} as name {name}", 
-                                                code="Ainit001")
+                                                text=f"share folder {pathsConstans.SHARE_FOLDER} as name {name}", 
+                                                code="Ainit002")
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
             fileManager.remove_share(share_name=name)
-            fileManager.create_and_share_folder(os.path.abspath(self.config.path), 
+            fileManager.create_and_share_folder(os.path.abspath(pathsConstans.SHARE_FOLDER), 
                                                 share_name=name, 
                                                 permissions=PERMITION)
         except Exception as e:
             #-----------------------------------------------------------
             log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
                                                 text=f"Excaption happend for sharing folder:{e}", 
-                                                code="Ainit002")
+                                                code="Ainit003")
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
 
-        self.storageManager = storageManager(path=self.config.path, 
-                                             logs_path=self.logs_path,
+        self.storageManager = storageManager(path=pathsConstans.IMAGES_SHARE_FOLDER, 
+                                             logs_path=pathsConstans.LOGS_SHARE_FOLDER,
                                              max_usage=self.config.max_allowed_storage,
                                              max_log_count=100,
                                              cleaning_evry_sec=2000,
                                              logger= self.logger)
 
     def mkdirs(self,):
-        if not os.path.exists(self.config.path):
-            os.makedirs(self.config.path)
+        if not os.path.exists(pathsConstans.SHARE_FOLDER):
+            os.makedirs(pathsConstans.SHARE_FOLDER)
         
-        if not os.path.exists(self.utils_path):
-            os.makedirs(self.utils_path)
+        if not os.path.exists(pathsConstans.UTILS_SHARE_FOLDER):
+            os.makedirs(pathsConstans.UTILS_SHARE_FOLDER)
 
-        if not os.path.exists(self.images_path):
-            os.makedirs(self.images_path)
+        
+        if not os.path.exists(pathsConstans.IMAGES_SHARE_FOLDER):
+            os.makedirs(pathsConstans.IMAGES_SHARE_FOLDER)
 
-        if not os.path.exists(self.logs_path):
-            os.makedirs(self.logs_path)
+
+        if not os.path.exists(pathsConstans.LOGS_SHARE_FOLDER):
+            os.makedirs(pathsConstans.LOGS_SHARE_FOLDER)
+
         
     def update_config(self,):
-        if os.path.exists(self.config_path):
-            self.config_mtime = os.path.getmtime(self.config_path)
+        if os.path.exists(pathsConstans.CONFIG_SHARE_PATH):
+            self.config_mtime = os.path.getmtime(pathsConstans.CONFIG_SHARE_PATH)
             try:
-                shutil.copy(self.config_path, 'config.json')
+                shutil.copy(pathsConstans.CONFIG_SHARE_PATH, configReader.PATH)
             except Exception as e:
                 #-----------------------------------------------------------
                 log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
@@ -118,7 +136,8 @@ class App:
                 self.logger.create_new_log(message=log_msg)
                 #-----------------------------------------------------------
 
-        self.config = configReader()
+        if os.path.exists(configReader.PATH):
+            self.config = configReader()
 
     def load_grabbers(self,):
         for camera_info in self.config.cameras:
@@ -134,7 +153,7 @@ class App:
                                 ip=camera_info['ip'],
                                 train_id= self.config.train_id,
                                 fps=self.config.video_fps,
-                                temp_folder=self.config.temp_folder,
+                                temp_folder=pathsConstans.TEMP_VIDEOS_FOLDER,
                                 segments=self.config.video_duration,
                                 codec=self.config.video_codec,
                                 logger = self.logger

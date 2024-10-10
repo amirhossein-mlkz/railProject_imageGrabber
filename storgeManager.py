@@ -77,18 +77,18 @@ class storageManager(threading.Thread):
         return total, used, free, max_allowed
     
 
-    def remove_empty_dirs(self, directory):
+    def remove_empty_dirs(self, directory, depth):
         is_empty = True
         for item in os.listdir(directory):
             item_path = os.path.join(directory, item)
             
             if os.path.isdir(item_path):
-                if not self.remove_empty_dirs(item_path):
-                    is_empty = False  # اگر زیرشاخه خالی نبود، این دایرکتوری را حذف نمی‌کنیم
+                if not self.remove_empty_dirs(item_path, depth+1):
+                    is_empty = False 
             else:
                 is_empty = False
         
-        if is_empty:
+        if is_empty and depth > 0:
             os.rmdir(directory)
             #-----------------------------------------------------------
             log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
@@ -324,7 +324,7 @@ class storageManager(threading.Thread):
                 #-----------------------------------------------------------
                 #-------------------------------------------------------------------------------------------
                 try:
-                    self.remove_empty_dirs(self.path)
+                    self.remove_empty_dirs(self.path, 0)
                 except Exception as e:
                     #-----------------------------------------------------------
                     log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,

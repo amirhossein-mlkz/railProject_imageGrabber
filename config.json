@@ -22,8 +22,7 @@
     "output": "video",
     "video_fps": 25,
     "video_duration": 600,
-    "video_codec":"mpegs"
-    
+    "video_codec":"none"
 
 
     
