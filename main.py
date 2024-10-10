@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 
 import numpy as np
 import dorsa_logger
@@ -10,6 +11,7 @@ from configReader import configReader
 from fileManager import fileManager, PERMITION
 from storgeManager import storageManager
 from filesSorting import moviesSorting
+from configUpdateChecker import configUpdateChecker
 
 class App:
     IMAGES_FOLDER = 'images'
@@ -18,6 +20,11 @@ class App:
 
     def __init__(self) -> None:
         self.config = configReader()
+        self.config_mtime = None
+        self.config_path = os.path.join(self.config.path, self.UTILS_FOLDER, 'config.json' )
+
+        self.update_config()
+        
 
         self.images_path = os.path.join(self.config.path, self.IMAGES_FOLDER)
         self.utils_path = os.path.join(self.config.path, self.UTILS_FOLDER)
@@ -35,6 +42,11 @@ class App:
                                         console_print=True,
                                         current_username="admin",
                                         line_seperator='-')
+        
+        self.configUpdateChecker = configUpdateChecker(path=self.config_path,
+                                                       mtime=self.config_mtime,
+                                                       logger=self.logger)
+        self.configUpdateChecker.start()
         
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
@@ -93,13 +105,26 @@ class App:
         if not os.path.exists(self.logs_path):
             os.makedirs(self.logs_path)
         
-        
+    def update_config(self,):
+        if os.path.exists(self.config_path):
+            self.config_mtime = os.path.getmtime(self.config_path)
+            try:
+                shutil.copy(self.config_path, 'config.json')
+            except Exception as e:
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                           text=f"""copy config error {e}""", 
+                                           code="AUC000")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
+
+        self.config = configReader()
 
     def load_grabbers(self,):
         for camera_info in self.config.cameras:
             #-----------------------------------------------------------
             log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
-                                           text=f"""creat canera object {camera_info}""", 
+                                           text=f"""creat camera object {camera_info}""", 
                                            code="ALG000")
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
@@ -108,9 +133,10 @@ class App:
                                 password= camera_info['password'],
                                 ip=camera_info['ip'],
                                 train_id= self.config.train_id,
-                                fps=25,
+                                fps=self.config.video_fps,
                                 temp_folder=self.config.temp_folder,
                                 segments=self.config.video_duration,
+                                codec=self.config.video_codec,
                                 logger = self.logger
                                 )
             

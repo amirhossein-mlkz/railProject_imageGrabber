@@ -9,10 +9,12 @@ from onvif import ONVIFCamera
 from persiantools import jdatetime
 import dorsa_logger
 
-H256 = 'libx265'
+H265 = 'libx265'
 H264 = 'libx264'
 NONE_CODEC = 'copy'
 MPEG = 'mpeg2video'
+
+
 class ffmpegCamera(threading.Thread):
     
     def __init__(self,
@@ -22,7 +24,7 @@ class ffmpegCamera(threading.Thread):
                  train_id:str,
                  ip:str, 
                  fps:int,
-                 codec= NONE_CODEC,
+                 codec,
                  segments = 300,
                  org_fps = 25,
                  temp_folder = 'temp_videos',
@@ -36,12 +38,18 @@ class ffmpegCamera(threading.Thread):
         self.password = password
         self.train_id = train_id
         self.ip = ip
-        self.codec = codec
         self.fps = fps
         self.org_fps = org_fps
         self.segments = segments
         self.temp_folder = temp_folder
         self.loop_index = 0
+        codesc = {
+           'none':NONE_CODEC,
+           'mpeg':MPEG,
+           'h265':H265,
+           'h264': H264
+        }
+        self.codec = codesc.get(codec, NONE_CODEC)
 
         self.logger = logger
 

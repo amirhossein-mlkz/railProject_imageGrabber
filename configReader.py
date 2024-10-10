@@ -18,6 +18,7 @@ class configReader:
         self.motion = self.config['motion'].lower() == 'true'
         self.motion_sens = int(self.config['motion_sens'])
         self.temp_folder = self.config['temp_folder']
+        self.video_codec = self.config['video_codec']
 
         
 

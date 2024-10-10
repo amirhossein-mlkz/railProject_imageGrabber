@@ -3,7 +3,7 @@
     
 
         {   
-            "name": "right",
+            "name": "cam1",
             "ip": "192.168.1.2",
             "username": "admin",
             "password": "Milad1375422@"
@@ -21,7 +21,8 @@
 
     "output": "video",
     "video_fps": 25,
-    "video_duration": 600
+    "video_duration": 600,
+    "video_codec":"mpegs"
     
 
 
