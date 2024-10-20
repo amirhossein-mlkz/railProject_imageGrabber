@@ -9,7 +9,7 @@ if %errorlevel% neq 0 (
 :START
 echo Running monitor.py...
 :: Run the Python monitor script
-python "C:\Users\milad\Desktop\PythonWork\RailWay\railProject_imageGrabber\monitor.py"
+python "C:\imageGrabber\monitor.py"
 if %errorlevel% neq 0 (
     echo monitor.py exited with error code %errorlevel%.
     echo Restarting monitor.py in 5 seconds...
