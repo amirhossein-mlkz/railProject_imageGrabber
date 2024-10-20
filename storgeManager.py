@@ -334,7 +334,7 @@ class storageManager(threading.Thread):
                     #-----------------------------------------------------------
 
                 try:
-                    self.remove_empty_dirs(self.logs_path)
+                    self.remove_empty_dirs(self.logs_path,0)
                 except Exception as e:
                     #-----------------------------------------------------------
                     log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
