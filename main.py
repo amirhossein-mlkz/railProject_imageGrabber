@@ -3,19 +3,20 @@ import time
 import shutil
 import signal
 import sys
+import subprocess
 
 import numpy as np
 import dorsa_logger
 import psutil
 
-
 from ffmpegCamera import ffmpegCamera
-from imageSaver import imageSave
 from configReader import configReader 
 from fileManager import fileManager, PERMITION
 from storgeManager import storageManager
 from filesSorting import moviesSorting
 from configUpdateChecker import configUpdateChecker
+from UpdateChecker import UpdateChecker
+from timeUpdateChecker import timeUpdateChecker
 from pathsConstans import pathsConstans
 
 class App:
@@ -26,7 +27,7 @@ class App:
         self.mkdirs()
         
         self.logger = dorsa_logger.logger(
-                                        main_folderpath=pathsConstans.LOGS_SHARE_FOLDER,
+                                        main_folderpath=pathsConstans.SELF_LOGS_SHARE_FOLDER,
                                         date_type=dorsa_logger.date_types.AD_DATE,
                                         date_format=dorsa_logger.date_formats.YYMMDD,
                                         time_format=dorsa_logger.time_formats.HHMMSS,
@@ -37,6 +38,8 @@ class App:
                                         line_seperator='-')
         self.config:configReader = None
         self.config_mtime = None
+
+        # self.set_timezone('Iran Standard Time')
 
         while True:
             self.update_config()
@@ -61,11 +64,27 @@ class App:
             
                     
 
-        
-        self.configUpdateChecker = configUpdateChecker(path=pathsConstans.CONFIG_SHARE_PATH,
+        #-----------------------------------------------------------
+        #software update checker
+        share_minifest_path = os.path.join(pathsConstans.SELF_UPDATE_IMAGEGRABBER_PATH, pathsConstans.MANIFEST_NAME)
+        self_minifest_path = os.path.join(pathsConstans.MANIFEST_NAME)
+
+        self.appUpdateChecker = UpdateChecker( share_minifest_path=share_minifest_path,
+                                              self_manifest_path=self_minifest_path,
+                                              logger=self.logger) 
+        self.appUpdateChecker.start()
+        #-----------------------------------------------------------
+        #config update checker
+        self.configUpdateChecker = configUpdateChecker(path=pathsConstans.SELF_CONFIG_SHARE_PATH,
                                                        mtime=self.config_mtime,
                                                        logger=self.logger)
         self.configUpdateChecker.start()
+        
+        #-----------------------------------------------------------
+        
+        self.timeSettingChecker = timeUpdateChecker(path=pathsConstans.SELF_CLOCK_SHARE_PATH,
+                                                    logger=self.logger)
+        self.timeSettingChecker.start()
         
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
@@ -78,7 +97,7 @@ class App:
         self.movieSorting = moviesSorting(train_id=self.config.train_id,
                                           cycle_time_sec=30,
                                           src_path=pathsConstans.TEMP_VIDEOS_FOLDER,
-                                          dst_path=pathsConstans.IMAGES_SHARE_FOLDER,
+                                          dst_path=pathsConstans.SELF_IMAGES_SHARE_FOLDER,
                                           logger= self.logger)
         
 
@@ -105,44 +124,78 @@ class App:
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
 
-        self.storageManager = storageManager(path=pathsConstans.IMAGES_SHARE_FOLDER, 
-                                             logs_path=pathsConstans.LOGS_SHARE_FOLDER,
+        self.storageManager = storageManager(path=pathsConstans.SELF_IMAGES_SHARE_FOLDER, 
+                                             logs_path=pathsConstans.SELF_LOGS_SHARE_FOLDER,
                                              max_usage=self.config.max_allowed_storage,
                                              max_log_count=100,
                                              cleaning_evry_sec=2000,
                                              logger= self.logger)
-        
+
+    def set_timezone(self, timezone):
+        try:
+            # Set timezone using tzutil command
+            subprocess.run(["tzutil", "/s", timezone], check=True)
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                                text=f"Timezone set to {timezone} successfully.", 
+                                                code="Ainit002")
+            self.logger.create_new_log(message=log_msg)
+
+        except subprocess.CalledProcessError as e:
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                text=f"Failed to set timezone:{e}", 
+                                                code="Ainit002")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
+
+
+
     def terminate_ffmpeg_processes(self,):
         for proc in psutil.process_iter(['pid', 'name']):
             try:
-                print( proc.info['name'])
+                # print( proc.info['name'])
                 if proc.info['name'] == 'ffmpeg.exe':
-                    print(f'Terminating FFmpeg process with PID: {proc.info["pid"]}')
+                    log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                           text=f'Terminating FFmpeg process with PID: {proc.info["pid"]}', 
+                                           code="ATFP000")
+                    self.logger.create_new_log(message=log_msg)
                     proc.terminate()
             except Exception as e:
-                print(e)
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                           text=f"""error on terminate ffmpeg {e}""", 
+                                           code="ATFP001")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
 
     def mkdirs(self,):
         if not os.path.exists(pathsConstans.SHARE_FOLDER):
             os.makedirs(pathsConstans.SHARE_FOLDER)
         
-        if not os.path.exists(pathsConstans.UTILS_SHARE_FOLDER):
-            os.makedirs(pathsConstans.UTILS_SHARE_FOLDER)
+        if not os.path.exists(pathsConstans.SELF_UTILS_SHARE_FOLDER):
+            os.makedirs(pathsConstans.SELF_UTILS_SHARE_FOLDER)
 
         
-        if not os.path.exists(pathsConstans.IMAGES_SHARE_FOLDER):
-            os.makedirs(pathsConstans.IMAGES_SHARE_FOLDER)
+        if not os.path.exists(pathsConstans.SELF_IMAGES_SHARE_FOLDER):
+            os.makedirs(pathsConstans.SELF_IMAGES_SHARE_FOLDER)
 
 
-        if not os.path.exists(pathsConstans.LOGS_SHARE_FOLDER):
-            os.makedirs(pathsConstans.LOGS_SHARE_FOLDER)
+        if not os.path.exists(pathsConstans.SELF_LOGS_SHARE_FOLDER):
+            os.makedirs(pathsConstans.SELF_LOGS_SHARE_FOLDER)
+
+        if not os.path.exists(pathsConstans.SELF_UPDATES_PATH):
+            os.makedirs(pathsConstans.SELF_UPDATES_PATH)
+
+        if not os.path.exists(pathsConstans.SELF_UPDATE_IMAGEGRABBER_PATH):
+            os.makedirs(pathsConstans.SELF_UPDATE_IMAGEGRABBER_PATH)
 
         
     def update_config(self,):
-        if os.path.exists(pathsConstans.CONFIG_SHARE_PATH):
-            self.config_mtime = os.path.getmtime(pathsConstans.CONFIG_SHARE_PATH)
+        if os.path.exists(pathsConstans.SELF_CONFIG_SHARE_PATH):
+            self.config_mtime = os.path.getmtime(pathsConstans.SELF_CONFIG_SHARE_PATH)
             try:
-                shutil.copy(pathsConstans.CONFIG_SHARE_PATH, configReader.PATH)
+                shutil.copy(pathsConstans.SELF_CONFIG_SHARE_PATH, configReader.PATH)
             except Exception as e:
                 #-----------------------------------------------------------
                 log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,

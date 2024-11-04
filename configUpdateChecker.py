@@ -36,7 +36,7 @@ class configUpdateChecker(threading.Thread):
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
                                             text=f"close sofware for config updated", 
-                                            code="CUCCFM000")
+                                            code="CUCCCS000")
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
         os.kill(os.getpid(), signal.SIGTERM)
@@ -46,7 +46,7 @@ class configUpdateChecker(threading.Thread):
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
                                             text=f"config file update checker thread run", 
-                                            code="CUCCFM000")
+                                            code="CUCR000")
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
         while True:

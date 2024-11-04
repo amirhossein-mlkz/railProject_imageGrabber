@@ -9,6 +9,7 @@
             "password": "Milad1375422@"
             
         }
+
     ],
 
     "max_allowed_storage": 0.7,
@@ -19,8 +20,6 @@
     "output": "video",
     "video_fps": 25,
     "video_duration": 600,
-    "video_codec":"mpeg"
+    "video_codec":"none"
 
-
-    
 }

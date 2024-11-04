@@ -44,6 +44,8 @@ class ffmpegCamera(threading.Thread):
         self.temp_folder = temp_folder
         self.loop_index = 0
 
+        self.onvif_camera = None
+
         codesc = {
            'none':NONE_CODEC,
            'mpeg':MPEG,
@@ -60,9 +62,9 @@ class ffmpegCamera(threading.Thread):
 
     def get_stream_url(self,):
         try:
-          camera = ONVIFCamera(host=self.ip, port=80, user=self.username, passwd=self.password)
+          self.onvif_camera = ONVIFCamera(host=self.ip, port=80, user=self.username, passwd=self.password)
 
-          media_service = camera.create_media_service()
+          media_service = self.onvif_camera.create_media_service()
           profiles = media_service.GetProfiles()
           stream_setup = {
               'Stream': 'RTP-Unicast',  
@@ -92,6 +94,57 @@ class ffmpegCamera(threading.Thread):
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
             return None 
+        
+    from onvif import ONVIFCamera
+
+    def setup_camera(self, ):
+        try:
+            media_service = self.onvif_camera.create_media_service()
+
+            profiles = media_service.GetProfiles()
+
+            # Use the first profile and Profiles have at least one
+            token = profiles[0].token
+
+            # Get all video encoder configurations
+            configurations_list = media_service.GetVideoEncoderConfigurations()
+
+            # Use the first profile and Profiles have at least one
+            video_encoder_configuration = configurations_list[0]
+
+            # Get video encoder configuration options
+            options = media_service.GetVideoEncoderConfigurationOptions({'ProfileToken':token})
+
+            # Setup stream configuration
+            video_encoder_configuration.Encoding = 'H264'
+            # Setup Resolution
+            video_encoder_configuration.Resolution.Width = options.H264.ResolutionsAvailable[0].Width
+            video_encoder_configuration.Resolution.Height = options.H264.ResolutionsAvailable[0].Height
+            # Setup Quality
+            video_encoder_configuration.Quality = int((options.QualityRange.Min + options.QualityRange.Max)/2)
+            # Setup FramRate
+            video_encoder_configuration.RateControl.FrameRateLimit = min(options.H264.FrameRateRange.Max, self.fps)
+            # Setup Gov Lenght
+            #video_encoder_configuration = max(min(options.H264.GovLengthRange.Max, self.fps), options.H264.GovLengthRange.Min)
+
+
+            # Create request type instance
+            request = media_service.create_type('SetVideoEncoderConfiguration')
+            request.Configuration = video_encoder_configuration
+            # ForcePersistence is obsolete and should always be assumed to be True
+            request.ForcePersistence = True
+
+            # Set the video encoder configuration
+            media_service.SetVideoEncoderConfiguration(request)
+        except Exception as e:
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                text=f"error happend in setup camera {self.name}: {e}", 
+                                                code="FCSC000")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
+
+
     
     def add_write_info_filter(self, stream):
         
@@ -174,8 +227,8 @@ class ffmpegCamera(threading.Thread):
                        f='segment',  # استفاده از فیلتر segment
                        segment_time=str( int(self.segments * self.fps/self.org_fps )),
                        reset_timestamps='1',
-                    #    preset='fast',
-                    #    preset='fast',  # کاهش سرعت پردازش
+                    #    crf=50,
+                    #    preset='faster',  # کاهش سرعت پردازش
                     #    tune='zerolatency'
                      )
         
@@ -235,7 +288,8 @@ class ffmpegCamera(threading.Thread):
                                            code="FCR001")
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
-        rstp_url = self.get_stream_url()  
+        rstp_url = self.get_stream_url() 
+        #self.setup_camera() 
         if rstp_url is None:
            time.sleep(5)
            continue
