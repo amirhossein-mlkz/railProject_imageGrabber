@@ -7,6 +7,7 @@ class pathsConstans:
     SHARE_FOLDER = "c:/rail_share"
     TEMP_VIDEOS_FOLDER = "temp_videos"
     MANIFEST_NAME = 'manifest.json'
+    UPADTE_ENC = 'update.enc'
     UPDATER_NAME = 'updater.exe'
     UPDATE_NAME = 'update.rar'
 
@@ -21,5 +22,6 @@ class pathsConstans:
     #----------------------------------------------------------------
     SELF_UPDATES_PATH = os.path.join(SHARE_FOLDER,'updates')
     SELF_UPDATE_IMAGEGRABBER_PATH = os.path.join(SELF_UPDATES_PATH,'imageGrabber')
+    TEMP_UPDATE_DIR = 'update'#directory of extracted of update
     #----------------------------------------------------------------
 

@@ -45,10 +45,10 @@ class timeUpdateChecker(threading.Thread):
             time_str = new_datetime.strftime('%H:%M:%S')
 
             # تنظیم تاریخ و زمان با استفاده از PowerShell
-            subprocess.run([
-                "powershell", "-Command",
-                f'Set-Date -Date "{date_str} {time_str}"'
-            ], shell=True, check=True)
+            result = subprocess.run(["powershell", "-Command",f'Set-Date -Date "{date_str} {time_str}"'], 
+                                    shell=True, 
+                                    check=True, 
+                                    text=True)
 
             return True
         
@@ -73,8 +73,16 @@ class timeUpdateChecker(threading.Thread):
                                             code="TUCCTS000")
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
-            with open(self.path, "r") as file:
-                setting:dict = json.load(file)
+            try:
+                with open(self.path, "r") as file:
+                    setting:dict = json.load(file)
+            except Exception as e:
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                                text=f"failed to open clock setting", 
+                                                code="TUCCTS001")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
             
             timeozne = setting.get('timezone')
             if timeozne:
@@ -94,30 +102,22 @@ class timeUpdateChecker(threading.Thread):
                         #-----------------------------------------------------------
                         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
                                                             text=f"clock setting detected", 
-                                                            code="TUCCTS000")
+                                                            code="TUCCTS002")
                         self.logger.create_new_log(message=log_msg)
                         #-----------------------------------------------------------
             os.remove(self.path)
 
     
-    def close_software(self,):
-        #-----------------------------------------------------------
-        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
-                                            text=f"close sofware for config updated", 
-                                            code="CUCCCS000")
-        self.logger.create_new_log(message=log_msg)
-        #-----------------------------------------------------------
-        os.kill(os.getpid(), signal.SIGTERM)
+
     
 
     def run(self, ):
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
-                                            text=f"config file update checker thread run", 
-                                            code="CUCR000")
+                                            text=f"Clock setting change checker thread run", 
+                                            code="TUCR000")
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
         while True:
             self.check_time_setting()
-
             time.sleep(5)
