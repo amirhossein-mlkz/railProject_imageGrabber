@@ -21,7 +21,7 @@ def is_main_py_running():
         if proc.info['cmdline'] is not None:  # Check if it's a Python process
             # print(proc.info['name'])
             if FILE_PATH in proc.info['name']:  # Check if it's running main.py
-                print('Exist'*10)
+                #print('Exist'*10)
                 return True  # main.py is running
     print('NOT'*20)
     return False  # main.py is not running

@@ -119,7 +119,7 @@ class Update:
         try:
             if current_os == "Windows":
                 # Windows restart command
-                subprocess.run(["shutdown", "/r", "/t", "5"], check=True)
+                subprocess.run(["shutdown", "/r", "/t", "10"], check=True)
             elif current_os == "Linux" or current_os == "Darwin": # Darwin is macOS
                 # Linux and macOS restart command
                 subprocess.run(["sudo", "reboot"], check=True)

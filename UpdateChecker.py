@@ -22,6 +22,16 @@ class UpdateChecker(threading.Thread):
         self.share_manifest = None
         self.close_event = close_event
 
+        #copy self manifest path to sell other system it's version
+        try:
+            shutil.copy2(self.self_manifest_path, self.share_minifest_path)
+        except Exception as e:
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                            text=f"Failed to replce manifest:{e}", 
+                                            code="UCINT000")
+            self.logger.create_new_log(message=log_msg)
+            #----------------------------------------------------------
 
     
 
@@ -117,7 +127,7 @@ class UpdateChecker(threading.Thread):
                     #-----------------------------------------------------------
                     log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
                                                             text=f"update needed but update.enc not found", 
-                                                            code="UCR004")
+                                                            code="UCR001")
                     self.logger.create_new_log(message=log_msg)
                     #-----------------------------------------------------------
                     try:
@@ -132,7 +142,7 @@ class UpdateChecker(threading.Thread):
                     #-----------------------------------------------------------
                     log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
                                                             text=f"update is during copy", 
-                                                            code="UCR004")
+                                                            code="UCR002")
                     self.logger.create_new_log(message=log_msg)
                     #-----------------------------------------------------------
                     continue
@@ -143,7 +153,7 @@ class UpdateChecker(threading.Thread):
                     #-----------------------------------------------------------
                     log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
                                                             text=f"update file was invalid due wrong licens", 
-                                                            code="UCR004")
+                                                            code="UCR003")
                     self.logger.create_new_log(message=log_msg)
                     #-----------------------------------------------------------
                     self.remove_file(self.share_minifest_path)
@@ -154,19 +164,20 @@ class UpdateChecker(threading.Thread):
                 #-----------------------------------------------------------
                 log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
                                                             text=f"update file was valid", 
-                                                            code="UCR003")
+                                                            code="UCR004")
                 self.logger.create_new_log(message=log_msg)
                 #-----------------------------------------------------------
                 status , msg = updateUtils.extract_zip_to_directory(pathsConstans.TEMP_UPDATE_DIR + '.zip', pathsConstans.TEMP_UPDATE_DIR)
                 if not status:
                     log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
                                                             text=f"error on zip extraction_" + msg, 
-                                                            code="UCR004")
+                                                            code="UCR005")
                     self.logger.create_new_log(message=log_msg)
                     continue
                 #-----------------------------------------------------------
                 self.remove_file(pathsConstans.TEMP_UPDATE_DIR + '.zip')
-
+                self.remove_file(self.share_minifest_path)
+                self.remove_file(update_enc_path)
                 self.close_software()
                     
 
