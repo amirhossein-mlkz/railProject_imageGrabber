@@ -196,16 +196,16 @@ if __name__ == '__main__':
     status, msg = updateUtils.extract_zip_to_directory('update.zip', 'update')
     print(status, msg)
     
-    hash_str = calculate_file_hash('update.zip')
-    password = pass_generator(hash_str)
-    encrypt_zip_file('update.zip', password, 'update')
-    add_metadata_to_file('update.enc', f'code: {hash_str}')
+    # hash_str = calculate_file_hash('update.zip')
+    # password = pass_generator(hash_str)
+    # encrypt_zip_file('update.zip', password, 'update')
+    # add_metadata_to_file('update.enc', f'code: {hash_str}')
 
-    hash_str2 = get_metadata_value('update.enc','code')
-    password2 = pass_generator(hash_str2)
-    remove_specific_metadata('update.enc', 'code')
-    status = decrypt_zip_file('update.enc', password, 'rez2.zip')
-    if status:
-        print('file is valid')
+    # hash_str2 = get_metadata_value('update.enc','code')
+    # password2 = pass_generator(hash_str2)
+    # remove_specific_metadata('update.enc', 'code')
+    # status = decrypt_zip_file('update.enc', password, 'rez2.zip')
+    # if status:
+    #     print('file is valid')
 
 

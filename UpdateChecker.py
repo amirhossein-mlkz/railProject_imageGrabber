@@ -12,7 +12,7 @@ from updateUtils import updateUtils
 class UpdateChecker(threading.Thread):
 
     
-    def __init__(self, share_minifest_path:str, self_manifest_path:str, logger:dorsa_logger.logger ) -> None:
+    def __init__(self, share_minifest_path:str, close_event:threading.Event, self_manifest_path:str, logger:dorsa_logger.logger ) -> None:
         super(UpdateChecker, self).__init__()
         self.share_minifest_path = share_minifest_path
         self.self_manifest_path = self_manifest_path
@@ -20,6 +20,8 @@ class UpdateChecker(threading.Thread):
 
         self.self_manifest = manifestLoader(self.self_manifest_path)
         self.share_manifest = None
+        self.close_event = close_event
+
 
     
 
@@ -47,7 +49,8 @@ class UpdateChecker(threading.Thread):
                                             code="UCCS000")
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
-        os.kill(os.getpid(), signal.SIGTERM)
+        #os.kill(os.getpid(), signal.SIGTERM)
+        self.close_event.set()
     
     def decrypt_update(self, path, dst_path):
         #file_hash = updateUtils.get_metadata_value(path, 'code')
@@ -166,29 +169,6 @@ class UpdateChecker(threading.Thread):
 
                 self.close_software()
                     
-
-                # updater_path = os.path.join(pathsConstans.SELF_UPDATE_IMAGEGRABBER_PATH, pathsConstans.UPDATER_NAME)
-                # if os.path.exists(updater_path):
-                #     try:
-                #         shutil.copy2(updater_path, pathsConstans.UPDATER_NAME)
-                #         self.close_software()
-                #     except Exception as e:
-                #         #-----------------------------------------------------------
-                #         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
-                #                                             text=f"error on copy updater and close software: {e}", 
-                #                                             code="UCR001")
-                #         self.logger.create_new_log(message=log_msg)
-                #         #-----------------------------------------------------------
-                # else:
-                #     #log every on hour
-                #     if idx > 360:
-                #         idx=0
-                #         #-----------------------------------------------------------
-                #         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
-                #                                             text=f"couldnt found updater.exe", 
-                #                                             code="UCR002")
-                #         self.logger.create_new_log(message=log_msg)
-                #         #-----------------------------------------------------------
 
 
             time.sleep(10)

@@ -8,11 +8,12 @@ import dorsa_logger
 class configUpdateChecker(threading.Thread):
 
 
-    def __init__(self, path, mtime, logger:dorsa_logger.logger) -> None:
+    def __init__(self, path, mtime, close_event:threading.Event, logger:dorsa_logger.logger) -> None:
         super(configUpdateChecker, self).__init__()
         self.path = path
         self.init_mtime = mtime
         self.logger = logger
+        self.close_event = close_event
 
     
 
@@ -39,7 +40,8 @@ class configUpdateChecker(threading.Thread):
                                             code="CUCCCS000")
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
-        os.kill(os.getpid(), signal.SIGTERM)
+        #os.kill(os.getpid(), signal.SIGTERM)
+        self.close_event.set()
     
 
     def run(self, ):

@@ -4,6 +4,7 @@ import shutil
 import signal
 import sys
 import subprocess
+import threading
 
 import numpy as np
 import dorsa_logger
@@ -23,7 +24,6 @@ class App:
     
 
     def __init__(self) -> None:
-        self.terminate_ffmpeg_processes()
         self.mkdirs()
         
         self.logger = dorsa_logger.logger(
@@ -38,6 +38,9 @@ class App:
                                         line_seperator='-')
         self.config:configReader = None
         self.config_mtime = None
+        self.close_event = threading.Event()
+        self.terminate_ffmpeg_processes()
+
 
         # self.set_timezone('Iran Standard Time')
 
@@ -71,12 +74,14 @@ class App:
 
         self.appUpdateChecker = UpdateChecker( share_minifest_path=share_minifest_path,
                                               self_manifest_path=self_minifest_path,
+                                              close_event=self.close_event,
                                               logger=self.logger) 
         self.appUpdateChecker.start()
         #-----------------------------------------------------------
         #config update checker
         self.configUpdateChecker = configUpdateChecker(path=pathsConstans.SELF_CONFIG_SHARE_PATH,
                                                        mtime=self.config_mtime,
+                                                       close_event=self.close_event,
                                                        logger=self.logger)
         self.configUpdateChecker.start()
         
@@ -260,12 +265,39 @@ class App:
         #-----------------------------------------------------------
 
 
+    def close_software(self,):
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                            text=f"stop camera threads", 
+                                            code="ACS000")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
+        for name, grabber in self.grabbers.items():
+            grabber.stop_thread()
+        time.sleep(5)
+        self.terminate_ffmpeg_processes()
+        time.sleep(5)
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    
+    def mainloop(self,):
+        while True:
+            if self.close_event.is_set():
+                self.close_software()
+
+            time.sleep(1)
+
+        
+
+
+
+        
+
 
 if __name__:
 
     app = App()
     app.load_grabbers()
     app.start()
-    while True:
-        time.sleep(1)
+    app.mainloop()
     

@@ -58,6 +58,7 @@ class ffmpegCamera(threading.Thread):
 
         self.daemon = True
         self.proccess = None
+        self.runing = True
 
 
     def get_stream_url(self,):
@@ -273,15 +274,18 @@ class ffmpegCamera(threading.Thread):
                                                     code="FCTF001")
                 self.logger.create_new_log(message=log_msg)
                 #-----------------------------------------------------------
+    def stop_thread(self,):
+        self.runing =False
 
     def run(self,):
+      self.runing = True
       #-----------------------------------------------------------
       log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
                                          text=f"run camera thread :{self.name}", 
                                          code="FCR000")
       self.logger.create_new_log(message=log_msg)
       #-----------------------------------------------------------
-      while True:
+      while self.runing:
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
                                            text=f"try connect to camera {self.name}", 

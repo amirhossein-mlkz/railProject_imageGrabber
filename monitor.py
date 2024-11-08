@@ -11,6 +11,8 @@ SRCIPT_DIRECTORY = r'C:\imageGrabber'
 UPDATE_DIRECTORY = r'C:\imageGrabber\update'
 UPDATER_PATH = os.path.join(UPDATE_DIRECTORY, UPDTER_NAME)
 MANIFEST_JSON = 'manifest.json'
+MANIFEST_PATH = os.path.join(SRCIPT_DIRECTORY, MANIFEST_JSON)
+
 
 
 def is_main_py_running():
@@ -66,13 +68,15 @@ def add_last_update_to_manifest(path, mtime):
         json.dump(data, file, indent=4)
 
 def get_last_update_from_manifest(path):
-    with open(path, 'r') as file:
-        data:dict = json.load(file)
+    data = {}
+    if os.path.exists(path):
+        with open(path, 'r') as file:
+            data = json.load(file)
     return data.get('last_updater', 0)
 
 def monitor_main_py():
     """Monitor the main.py process and restart it if it closes."""
-    print('start monitor')
+    print(f'start monitor: {os.getcwd()}')
     try:
         if os.path.exists(UPDATE_DIRECTORY):
             shutil.rmtree(UPDATE_DIRECTORY)
@@ -88,10 +92,11 @@ def monitor_main_py():
     time.sleep(3)  # Wait for 30 seconds before restarting
 
     
-    last_update_modify = get_last_update_from_manifest(MANIFEST_JSON)
+    last_update_modify = get_last_update_from_manifest(MANIFEST_PATH)
 
     while True:
         if not is_main_py_running():  # Check if main.py is still running
+            time.sleep(10)
             terminate_ffmpeg_processes()
             print("closed. Restarting in 5 seconds...")
             time.sleep(10)  # Wait for 5 seconds before restarting
@@ -99,7 +104,7 @@ def monitor_main_py():
             if os.path.exists(UPDATER_PATH):
                 mtime = os.path.getmtime(UPDATER_PATH)
                 if mtime != last_update_modify:
-                    add_last_update_to_manifest(MANIFEST_JSON, mtime)
+                    add_last_update_to_manifest(MANIFEST_PATH, mtime)
                     print('RUN UPDATER')
                     run_updater()
                     time.sleep(10)
