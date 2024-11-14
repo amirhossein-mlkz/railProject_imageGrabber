@@ -21,8 +21,9 @@ class ffmpegCamera(threading.Thread):
                  name:str, 
                  username:str, 
                  password:str, 
-                 train_id:str,
                  ip:str, 
+                 port:str,
+                 train_id:str,
                  fps:int,
                  codec,
                  segments = 300,
@@ -37,6 +38,7 @@ class ffmpegCamera(threading.Thread):
         self.username = username
         self.password = password
         self.train_id = train_id
+        self.port = port
         self.ip = ip
         self.fps = fps
         self.org_fps = org_fps
@@ -63,7 +65,7 @@ class ffmpegCamera(threading.Thread):
 
     def get_stream_url(self,):
         try:
-          self.onvif_camera = ONVIFCamera(host=self.ip, port=80, user=self.username, passwd=self.password)
+          self.onvif_camera = ONVIFCamera(host=self.ip, port=self.port, user=self.username, passwd=self.password)
 
           media_service = self.onvif_camera.create_media_service()
           profiles = media_service.GetProfiles()

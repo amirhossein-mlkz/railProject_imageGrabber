@@ -227,20 +227,36 @@ class App:
                                            code="ALG000")
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
-            grab = ffmpegCamera( name=camera_info['name'], 
-                                username=camera_info['username'],
-                                password= camera_info['password'],
-                                ip=camera_info['ip'],
-                                train_id= self.config.train_id,
-                                fps=self.config.video_fps,
-                                temp_folder=pathsConstans.TEMP_VIDEOS_FOLDER,
-                                segments=self.config.video_duration,
-                                codec=self.config.video_codec,
-                                logger = self.logger
-                                )
-            
-            self.grabbers[camera_info['name']] = grab
- 
+            if (    'name' in camera_info
+                and 'password' in camera_info
+                and 'username' in camera_info
+                and 'port' in camera_info
+                and 'ip' in camera_info
+            ):
+
+                grab = ffmpegCamera( name=camera_info['name'], 
+                                    username=camera_info['username'],
+                                    password= camera_info['password'],
+                                    ip=camera_info['ip'],
+                                    port=camera_info['port'],
+                                    train_id= self.config.train_id,
+                                    fps=self.config.video_fps,
+                                    temp_folder=pathsConstans.TEMP_VIDEOS_FOLDER,
+                                    segments=self.config.video_duration,
+                                    codec=self.config.video_codec,
+                                    logger = self.logger
+                                    )
+                
+                self.grabbers[camera_info['name']] = grab
+            else:
+                
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                            text=f"camera info is not complete {camera_info}", 
+                                            code="ALG001")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
+    
 
     def start(self,):
         #-----------------------------------------------------------
