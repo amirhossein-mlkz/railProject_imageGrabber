@@ -89,7 +89,7 @@ def monitor_main_py():
     time.sleep(10)
     run_app()  # Start main.py
     print(f"Started main.py")
-    time.sleep(3)  # Wait for 30 seconds before restarting
+    time.sleep(30)  # Wait for 30 seconds before restarting
 
     
     last_update_modify = get_last_update_from_manifest(MANIFEST_PATH)
@@ -112,7 +112,7 @@ def monitor_main_py():
             else:
                 run_app()  # Restart main.py
                 print(f"Restarted main.py")
-        time.sleep(5)  # Check every 30 second
+        time.sleep(30)  # Check every 30 second
 
 
 
