@@ -1,9 +1,10 @@
 {
+
     "cameras":[
     
 
         {   
-            "name": "cam1",
+            "name": "right",
             "ip": "192.168.1.2",
             "username": "admin",
             "password": "Milad1375422@"
@@ -12,7 +13,9 @@
     ],
 
 
-    "path" : "c:/rail_share",
+
+
+
     "temp_folder": "temp_videos",
     "max_allowed_storage": 0.7,
     "train_id": "11BG21",
@@ -24,6 +27,7 @@
     "video_duration": 600,
     "video_codec":"none"
 
+    
 
     
 }
