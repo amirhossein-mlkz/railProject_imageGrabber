@@ -127,7 +127,7 @@ class moviesSorting(threading.Thread):
         _, file_extension = os.path.splitext(fname)
 
         res_fname = ctime.strftime('%Y-%m-%d_%H-%M-%S-%f')
-        res_fname = res_fname +  '_' + self.train_id + '_' + camera_name + file_extension
+        res_fname = f"{res_fname}_{self.train_id}_{camera_name}_new{file_extension}"
 
         return path, res_fname
     

@@ -6,8 +6,22 @@ class pathsConstans:
 
     SHARE_FOLDER = "c:/rail_share"
     TEMP_VIDEOS_FOLDER = "temp_videos"
+    MANIFEST_NAME = 'manifest.json'
+    UPADTE_ENC = 'update.enc'
+    UPDATER_NAME = 'updater.exe'
+    UPDATE_NAME = 'update.rar'
 
-    IMAGES_SHARE_FOLDER = os.path.join(SHARE_FOLDER,'images')
-    UTILS_SHARE_FOLDER = os.path.join(SHARE_FOLDER,'utils')
-    LOGS_SHARE_FOLDER = os.path.join(UTILS_SHARE_FOLDER,'logs')
-    CONFIG_SHARE_PATH = os.path.join(UTILS_SHARE_FOLDER,'config.json')
+
+    SELF_IMAGES_SHARE_FOLDER = os.path.join(SHARE_FOLDER,'images')
+    #----------------------------------------------------------------
+    SELF_UTILS_SHARE_FOLDER = os.path.join(SHARE_FOLDER,'utils')
+    SELF_LOGS_SHARE_FOLDER = os.path.join(SELF_UTILS_SHARE_FOLDER,'logs')
+    SELF_CONFIG_SHARE_PATH = os.path.join(SELF_UTILS_SHARE_FOLDER,'config.json')
+    SELF_CLOCK_SHARE_PATH = os.path.join(SELF_UTILS_SHARE_FOLDER,'clock.json')
+
+    #----------------------------------------------------------------
+    SELF_UPDATES_PATH = os.path.join(SHARE_FOLDER,'updates')
+    SELF_UPDATE_IMAGEGRABBER_PATH = os.path.join(SELF_UPDATES_PATH,'imageGrabber')
+    TEMP_UPDATE_DIR = 'update'#directory of extracted of update
+    #----------------------------------------------------------------
+
