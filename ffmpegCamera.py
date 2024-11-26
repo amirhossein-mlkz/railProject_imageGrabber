@@ -3,6 +3,7 @@ import time
 import subprocess
 from datetime import datetime
 import os
+from urllib.parse import urlparse, urlunparse
 
 import ffmpeg
 from onvif import ONVIFCamera
@@ -63,42 +64,57 @@ class ffmpegCamera(threading.Thread):
         self.runing = True
 
 
-    def get_stream_url(self,):
+    def get_stream_url(self):
         try:
-          self.onvif_camera = ONVIFCamera(host=self.ip, port=self.port, user=self.username, passwd=self.password)
+            # اتصال به دوربین ONVIF
+            self.onvif_camera = ONVIFCamera(host=self.ip, port=self.port, user=self.username, passwd=self.password)
 
-          media_service = self.onvif_camera.create_media_service()
-          profiles = media_service.GetProfiles()
-          stream_setup = {
-              'Stream': 'RTP-Unicast',  
-              'Transport': {
-                  'Protocol': 'RTSP' 
-              }
-          }
+            # دریافت سرویس مدیا و پروفایل
+            media_service = self.onvif_camera.create_media_service()
+            profiles = media_service.GetProfiles()
 
-          stream_uri = media_service.GetStreamUri({
-              'StreamSetup': stream_setup,
-              'ProfileToken': profiles[0].token
-          })
-          #-----------------------------------------------------------
-          log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
-                                            text=f"stream uri camera {self.name}: {stream_uri.Uri}", 
-                                            code="FCGSU000")
-          self.logger.create_new_log(message=log_msg)
-          #-----------------------------------------------------------
-            
-          return stream_uri.Uri
-        
-        except Exception as e:
+            stream_setup = {
+                'Stream': 'RTP-Unicast',
+                'Transport': {
+                    'Protocol': 'RTSP'
+                }
+            }
+
+            # دریافت StreamUri
+            stream_uri = media_service.GetStreamUri({
+                'StreamSetup': stream_setup,
+                'ProfileToken': profiles[0].token
+            })
+
+            # تجزیه URL برای بررسی ساختار
+            parsed_uri = urlparse(stream_uri.Uri)
+
+            # اضافه کردن احراز هویت (username و password)
+            netloc_with_auth = f"{self.username}:{self.password}@{parsed_uri.netloc}"
+            updated_uri = parsed_uri._replace(netloc=netloc_with_auth)
+            final_url = urlunparse(updated_uri)
+
             #-----------------------------------------------------------
-            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
-                                                text=f"error happend in get stream uri camera {self.name}: {e}", 
-                                                code="FCGSU001")
+            log_msg = dorsa_logger.log_message(
+                level=dorsa_logger.log_levels.DEBUG,
+                text=f"stream uri camera {self.name}: {final_url}",
+                code="FCGSU000"
+            )
             self.logger.create_new_log(message=log_msg)
             #-----------------------------------------------------------
-            return None 
-        
-    from onvif import ONVIFCamera
+
+            return final_url
+
+        except Exception as e:
+            # مدیریت خطا
+            log_msg = dorsa_logger.log_message(
+                level=dorsa_logger.log_levels.ERROR,
+                text=f"Failed to get stream URL for camera {self.name}: {str(e)}",
+                code="FCGSU001"
+            )
+            self.logger.create_new_log(message=log_msg)
+            return None
+
 
     def setup_camera(self, ):
         try:
