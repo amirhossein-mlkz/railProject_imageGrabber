@@ -92,7 +92,7 @@ class App:
         self.timeSettingChecker.start()
         
         #-----------------------------------------------------------
-        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.INFO,
                                             text=f"RUN APP With Config:{self.config.config}", 
                                             code="Ainit001")
         self.logger.create_new_log(message=log_msg)
