@@ -1,11 +1,6 @@
 import subprocess
 import time
 import psutil
-<<<<<<< HEAD
-
-
-FILE_PATH = r'main.py'
-=======
 import os
 import json
 import shutil
@@ -19,42 +14,10 @@ MANIFEST_JSON = 'manifest.json'
 MANIFEST_PATH = os.path.join(SRCIPT_DIRECTORY, MANIFEST_JSON)
 
 
->>>>>>> a44c8d82d935ee7982a9889e7f37b82bc7da267e
 
 def is_main_py_running():
     """Check if main.py is running by inspecting all Python processes."""
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-<<<<<<< HEAD
-        if 'python' in proc.info['name']:  # Check if it's a Python process
-            if FILE_PATH in proc.info['cmdline']:  # Check if it's running main.py
-                return True  # main.py is running
-    return False  # main.py is not running
-
-def run_main_py():
-    """Start main.py as an administrator and return the process."""
-    # Set the directory where main.py is located
-    script_directory = r'C:\Users\milad\Desktop\PythonWork\RailWay\railProject_imageGrabber'
-
-    # Use PowerShell to run the script with elevated privileges
-    return subprocess.Popen(
-        ["powershell", "-Command", "Start-Process", "python", "'main.py'", "-Verb", "runAs"],
-        cwd=script_directory  # Set the working directory
-    )
-
-def monitor_main_py():
-    """Monitor the main.py process and restart it if it closes."""
-    run_main_py()  # Start main.py
-    print(f"Started main.py")
-    time.sleep(30)  # Wait for 30 seconds before restarting
-
-
-    while True:
-        if not is_main_py_running():  # Check if main.py is still running
-            print("main.py closed. Restarting in 5 seconds...")
-            time.sleep(5)  # Wait for 5 seconds before restarting
-            run_main_py()  # Restart main.py
-            print(f"Restarted main.py")
-=======
         if proc.info['cmdline'] is not None:  # Check if it's a Python process
             # print(proc.info['name'])
             if FILE_PATH in proc.info['name']:  # Check if it's running main.py
@@ -149,7 +112,6 @@ def monitor_main_py():
             else:
                 run_app()  # Restart main.py
                 print(f"Restarted main.py")
->>>>>>> a44c8d82d935ee7982a9889e7f37b82bc7da267e
         time.sleep(30)  # Check every 30 second
 
 
