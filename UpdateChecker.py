@@ -120,8 +120,10 @@ class UpdateChecker(threading.Thread):
         idx = 0
         while True:
             idx +=1
+            print('milad'*50)
             update_available = self.check_version()
             if update_available:
+                # time.sleep(30)
                 update_enc_path = os.path.join(pathsConstans.SELF_UPDATE_IMAGEGRABBER_PATH, pathsConstans.UPADTE_ENC)
                 if not os.path.exists(update_enc_path):
                     #-----------------------------------------------------------
@@ -130,11 +132,11 @@ class UpdateChecker(threading.Thread):
                                                             code="UCR001")
                     self.logger.create_new_log(message=log_msg)
                     #-----------------------------------------------------------
-                    try:
-                        os.remove(self.share_minifest_path)
-                    except:
-                        pass
-                        
+                    # try:
+                    # os.remove(self.share_minifest_path)
+                    # except:
+                    #     pass
+                    time.sleep(5)
                     continue
                 
                 flag = self.check_size_not_change(update_enc_path)

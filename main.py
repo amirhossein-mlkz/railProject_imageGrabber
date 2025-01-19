@@ -9,7 +9,7 @@ import threading
 import numpy as np
 import dorsa_logger
 import psutil
-
+from VidGearCamera import vidGear
 from ffmpegCamera import ffmpegCamera
 from configReader import configReader 
 from fileManager import fileManager, PERMITION
@@ -19,51 +19,59 @@ from configUpdateChecker import configUpdateChecker
 from UpdateChecker import UpdateChecker
 from timeUpdateChecker import timeUpdateChecker
 from pathsConstans import pathsConstans
+from PySide6.QtCore import Qt, QThread, Signal
 
-class App:
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QProgressBar , QPushButton , QMessageBox , QHBoxLayout,QSpacerItem, QSizePolicy
+)
+
+
+class App(QThread):
     
 
-    def __init__(self) -> None:
+    signal_cam_0 = Signal(object)
+    signal_cam_1 = Signal(object)
+    signal_cam_2 = Signal(object)
+    signal_cam_3 = Signal(object)
+
+
+
+    def __init__(self,logger:dorsa_logger,config,config_mtime,parent=None) -> None:
+        super().__init__(parent)
+        
         self.mkdirs()
         
-        self.logger = dorsa_logger.logger(
-                                        main_folderpath=pathsConstans.SELF_LOGS_SHARE_FOLDER,
-                                        date_type=dorsa_logger.date_types.AD_DATE,
-                                        date_format=dorsa_logger.date_formats.YYMMDD,
-                                        time_format=dorsa_logger.time_formats.HHMMSS,
-                                        file_level=dorsa_logger.log_levels.DEBUG,
-                                        console_level=dorsa_logger.log_levels.DEBUG,
-                                        console_print=True,
-                                        current_username="admin",
-                                        line_seperator='-')
-        self.config:configReader = None
-        self.config_mtime = None
+        self.logger =logger
+        self.config:configReader = config
+        self.config_mtime = config_mtime
+        self.show_flag = False
+    
         self.close_event = threading.Event()
         self.terminate_ffmpeg_processes()
 
 
         # self.set_timezone('Iran Standard Time')
 
-        while True:
-            self.update_config()
+        # while True:
+        #     self.update_config()
 
-            if self.config is not None:
-                #-----------------------------------------------------------
-                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
-                                            text=f"config update success", 
-                                            code="Ainit000")
-                self.logger.create_new_log(message=log_msg)
-                #-----------------------------------------------------------
-                break
+        #     if self.config is not None:
+        #         #-----------------------------------------------------------
+        #         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+        #                                     text=f"config update success", 
+        #                                     code="Ainit000")
+        #         self.logger.create_new_log(message=log_msg)
+        #         #-----------------------------------------------------------
+        #         break
             
-            else:
-                #-----------------------------------------------------------
-                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
-                                            text=f"no config exists", 
-                                            code="Ainit000")
-                self.logger.create_new_log(message=log_msg)
-                #-----------------------------------------------------------
-                time.sleep(30)
+        #     else:
+        #         #-----------------------------------------------------------
+        #         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+        #                                     text=f"no config exists", 
+        #                                     code="Ainit000")
+        #         self.logger.create_new_log(message=log_msg)
+        #         #-----------------------------------------------------------
+        #         time.sleep(30)
             
                     
 
@@ -258,7 +266,12 @@ class App:
                 #-----------------------------------------------------------
     
 
-    def start(self,):
+
+
+
+
+
+    def run(self):
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
                                            text=f"start app", 
@@ -281,6 +294,107 @@ class App:
         #-----------------------------------------------------------
 
 
+
+    def set_show_flag(self,mode=False):
+
+        for name, grabber in self.grabbers.items():
+            grabber.set_show_flag(mode)
+
+
+    def vid_gear_load_grabbers(self):
+
+        signals = [self.signal_cam_0,self.signal_cam_1,self.signal_cam_2,self.signal_cam_3]
+
+
+        for iter, camera_info in enumerate(self.config.cameras):
+            #-----------------------------------------------------------
+            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
+                                           text=f"""create camera object {camera_info}""", 
+                                           code="ALG000")
+            self.logger.create_new_log(message=log_msg)
+            #-----------------------------------------------------------
+            if (    'name' in camera_info
+                and 'password' in camera_info
+                and 'username' in camera_info
+                and 'port' in camera_info
+                and 'ip' in camera_info
+            ):
+
+                grab = vidGear( name=camera_info['name'], 
+                                    username=camera_info['username'],
+                                    password= camera_info['password'],
+                                    ip=camera_info['ip'],
+                                    port=camera_info['port'],
+                                    train_id= self.config.train_id,
+                                    fps=self.config.video_fps,
+                                    temp_folder=pathsConstans.TEMP_VIDEOS_FOLDER,
+                                    segments=self.config.video_duration,
+                                    codec=self.config.video_codec,
+                                    logger = self.logger,
+                                    signal_show=signals[iter],
+                                    show_flag=self.show_flag,
+                                    motion=self.config.motion
+                                    )
+                
+                self.grabbers[camera_info['name']] = grab
+            else:
+                
+                #-----------------------------------------------------------
+                log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
+                                            text=f"camera info is not complete {camera_info}", 
+                                            code="ALG001")
+                self.logger.create_new_log(message=log_msg)
+                #-----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+    def start(self):
+
+
+        # print('milad'*80)
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
+                                           text=f"start app", 
+                                           code="AS000")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.signal_handler)
+
+        self.storageManager.start()
+
+        # self.grabbers['cam1'].run()
+        # self.grabbers['cam2'].run()
+
+
+        for key in self.grabbers.keys():
+
+            print(key ,self.grabbers[key], 'started')
+            self.grabbers[key].start()
+        time.sleep(1)
+        self.movieSorting.start()
+        #-----------------------------------------------------------
+        log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
+                                           text=f"start app finish success", 
+                                           code="AS000")
+        self.logger.create_new_log(message=log_msg)
+        #-----------------------------------------------------------
+
+
+
+
+
+
+
+
     def close_software(self,):
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
@@ -289,7 +403,9 @@ class App:
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
         for name, grabber in self.grabbers.items():
+            print('start stop')
             grabber.stop_thread()
+            print('set stop')
         time.sleep(5)
         self.terminate_ffmpeg_processes()
         time.sleep(5)
@@ -303,17 +419,19 @@ class App:
 
             time.sleep(1)
 
-        
+    def minCheckker(self):
+        if self.close_event.is_set():
+            self.close_software()
 
 
 
         
 
 
-if __name__:
+if __name__=='__main__':
 
     app = App()
     app.load_grabbers()
-    app.start()
+    app.run()
     app.mainloop()
     

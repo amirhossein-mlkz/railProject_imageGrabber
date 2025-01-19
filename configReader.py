@@ -15,6 +15,7 @@ class configReader:
         self.video_duration = int(self.config['video_duration'])
         self.video_fps = int(self.config['video_fps'])
         self.video_codec = self.config['video_codec']
+        self.motion = self.config['motion']
 
         
 

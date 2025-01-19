@@ -1,0 +1,66 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/icons8-flip-horizontal-40.png</file>
+    <file>icons/icons8-flip-horizontal-40-hover.png</file>
+    <file>icons/icons8-flip-vertical-40.png</file>
+    <file>icons/icons8-flip-vertical-40-hover.png</file>
+    <file>icons/icons8-minus-36.png</file>
+    <file>icons/icons8-rotate-left-40.png</file>
+    <file>icons/icons8-rotate-left-40-hover.png</file>
+    <file>icons/icons8-rotate-right-40.png</file>
+    <file>icons/icons8-rotate-right-40-hover.png</file>
+    <file>icons/icons8-minus-36-hover.png</file>
+    <file>icons/icons8-plus-36.png</file>
+    <file>icons/icons8-plus-36-hover.png</file>
+    <file>icons/2.png</file>
+    <file>icons/2024-07-30_09-20-23-005523__11BG21.jpeg</file>
+    <file>icons/7859403591645017308-128.png</file>
+    <file>icons/arrow-left.png</file>
+    <file>icons/arrow-right.png</file>
+    <file>icons/calibration_settings.png</file>
+    <file>icons/camera_connected - Copy.png</file>
+    <file>icons/camera_connected.png</file>
+    <file>icons/camera_connection.png</file>
+    <file>icons/camera_disconnected - Copy.png</file>
+    <file>icons/camera_disconnected.png</file>
+    <file>icons/Capture-calib.PNG</file>
+    <file>icons/check-wight-24.png</file>
+    <file>icons/cil-circle.png</file>
+    <file>icons/cil-rectangle.png</file>
+    <file>icons/cil-window-minimize.png</file>
+    <file>icons/cil-x.png</file>
+    <file>icons/cil-x-circle.png</file>
+    <file>icons/clear.png</file>
+    <file>icons/close.png</file>
+    <file>icons/close_icon.png</file>
+    <file>icons/crosshair.png</file>
+    <file>icons/database.png</file>
+    <file>icons/details.png</file>
+    <file>icons/directory_2.png</file>
+    <file>icons/dorsa_white.png</file>
+    <file>icons/download.png</file>
+    <file>icons/download2.png</file>
+    <file>icons/download2_disable.png</file>
+    <file>icons/download2_hover.png</file>
+    <file>icons/download-black.png</file>
+    <file>icons/download-gray.png</file>
+    <file>icons/download-white.png</file>
+    <file>icons/error.png</file>
+    <file>icons/export.png</file>
+    <file>icons/grid.png</file>
+    <file>icons/icon_help.png</file>
+    <file>icons/icon_maximize.png</file>
+    <file>icons/icon_minimize.png</file>
+    <file>icons/icons8-check-mark-48.png</file>
+    <file>icons/icons8-close-48.png</file>
+    <file>icons/icons8-close-48-hover.png</file>
+    <file>icons/icons8-close-80.png</file>
+    <file>icons/icons8-company-50.png</file>
+    <file>icons/icons8-drop-down-50.png</file>
+    <file>icons/icons8-drop-down-80.png</file>
+    <file>icons/icons8-edit-hover-table-50.png</file>
+    <file>icons/icons8-edit-table-50.png</file>
+    <file>icons/icons8-file-download-50.png</file>
+
+  </qresource>
+</RCC>

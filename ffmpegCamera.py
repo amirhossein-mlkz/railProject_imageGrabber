@@ -16,6 +16,7 @@ NONE_CODEC = 'copy'
 MPEG = 'mpeg2video'
 
 
+
 class ffmpegCamera(threading.Thread):
     
     def __init__(self,
@@ -230,51 +231,63 @@ class ffmpegCamera(threading.Thread):
         self.loop_index+=1
         return output_dir, fname
     
-    def build_and_run_stream(self,rstp_url, output_path):
-        self.proccess = None
-        stream = ffmpeg.input(rstp_url, 
-                              ss=0,
-                              rtsp_transport='tcp',
-                              timeout ='5000000', 
-                                )
-        # stream = self.add_write_info_filter(stream)
-        # stream = ffmpeg.filter(stream, 'fps', fps=self.fps, round='up')
 
-        stream = ffmpeg.output(stream, 
-                       output_path, 
-                       vcodec=self.codec,
-                       f='segment',  # استفاده از فیلتر segment
-                       segment_time=str( int(self.segments * self.fps/self.org_fps )),
-                       reset_timestamps='1',
-                    #    crf=50,
-                    #    preset='faster',  # کاهش سرعت پردازش
-                    #    tune='zerolatency'
-                     )
-        
-        stream = ffmpeg.overwrite_output(stream)
+
+    def build_and_run_stream(self, rtsp_url, output_path):
+        self.proccess = None
+        # Input stream from RTSP URL
+        stream = ffmpeg.input(rtsp_url, 
+                            ss=0,
+                            rtsp_transport='tcp',
+                            timeout='5000000')
+
+        # Correct select filter expression
+        select_filter = 'select=gt(scene,0.4)'
+        stream = ffmpeg.filter(stream, 'select', select_filter)
+
+        # Use the `drawbox` filter to highlight the motion (optional)
+        draw_motion = ffmpeg.filter(stream, 'drawbox', 
+                                    x=0, y=0, w='iw', h='ih', 
+                                    color='red', thickness=5)
+
+        # Output settings: Save segments with motion
+        output_stream = ffmpeg.output(draw_motion,
+                                      output_path,
+                                      vcodec='libx264',
+                                      f='segment',
+                                      segment_time=10,  # Set desired segment time
+                                      reset_timestamps='1')
+
+        # Run the ffmpeg command
+        output_stream = ffmpeg.overwrite_output(output_stream)
 
         try:
-            self.proccess = ffmpeg.run(stream, quiet=False, ) 
-            #-----------------------------------------------------------
-            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.WARNING,
-                                           text=f"ffmpeg run output {self.name}: {self.proccess}", 
-                                           code="FCR001")
+            self.proccess = ffmpeg.run(output_stream, quiet=False)
+            # Log success
+            log_msg = dorsa_logger.log_message(
+                level=dorsa_logger.log_levels.WARNING,
+                text=f"FFmpeg run output {self.name}: {self.proccess}",
+                code="FCR001"
+            )
             self.logger.create_new_log(message=log_msg)
-            #-----------------------------------------------------------        
         except ffmpeg.Error as e:
-            #-----------------------------------------------------------
-            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
-                                               text=f"error occured in build_and_run_stream: {e.stderr.decode()}", 
-                                               code="FCBARS000")
+            # Log FFmpeg error
+            log_msg = dorsa_logger.log_message(
+                level=dorsa_logger.log_levels.ERROR,
+                text=f"Error in build_and_run_stream: {e.stderr.decode() if e.stderr else 'No error message available'}",
+                code="FCBARS000"
+            )
             self.logger.create_new_log(message=log_msg)
-            #-----------------------------------------------------------
         except KeyboardInterrupt:
-            #-----------------------------------------------------------
-            log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.ERROR,
-                                               text=f"recoed stop manualy {self.name}", 
-                                               code="FCBARS001")
+            # Log manual stop
+            log_msg = dorsa_logger.log_message(
+                level=dorsa_logger.log_levels.ERROR,
+                text=f"Recording stopped manually {self.name}",
+                code="FCBARS001"
+            )
             self.logger.create_new_log(message=log_msg)
-            #-----------------------------------------------------------
+
+
     def terminate_ffmpeg(self,):
         #-----------------------------------------------------------
         log_msg = dorsa_logger.log_message(level=dorsa_logger.log_levels.DEBUG,
@@ -311,6 +324,7 @@ class ffmpegCamera(threading.Thread):
         self.logger.create_new_log(message=log_msg)
         #-----------------------------------------------------------
         rstp_url = self.get_stream_url() 
+        
         #self.setup_camera() 
         if rstp_url is None:
            time.sleep(5)
